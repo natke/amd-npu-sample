@@ -42,24 +42,22 @@ def main() -> None:
     model_path = find_model_folder()
     step(f"Model folder: {model_path}")
 
-    step("Discovering AMD NPU (VitisAI) EP via Windows ML ...")
-    try:
-        import windowsml
-        vitis_ep = None
-        with windowsml.EpCatalog() as catalog:
-            for ep in catalog.find_all_providers():
-                step(f"  {ep.name} v{ep.version} state={ep.ready_state.name} path={ep.library_path}")
-                if "vitis" in ep.name.lower():
-                    ep.ensure_ready()
-                    vitis_ep = (ep.name, ep.library_path)
-        if vitis_ep is None:
-            sys.exit("No VitisAI EP found via Windows ML on this machine.")
-    except Exception as e:
-        sys.exit(f"Failed to query Windows ML EP catalog: {e}")
-
-    ep_name, ep_lib = vitis_ep
-    step(f"Registering EP library: {ep_name} -> {ep_lib}")
-    og.register_execution_provider_library(ep_name, ep_lib)
+    step("Discovering EPs via Windows ML and registering all ...")
+    import windowsml
+    vitis_ep_name = None
+    with windowsml.EpCatalog() as catalog:
+        for ep in catalog.find_all_providers():
+            step(f"  {ep.name} v{ep.version} state={ep.ready_state.name} path={ep.library_path}")
+            ep.ensure_ready()
+            if not ep.library_path:
+                step(f"  skip {ep.name}: empty library_path")
+                continue
+            og.register_execution_provider_library(ep.name, ep.library_path)
+            if "vitis" in ep.name.lower():
+                vitis_ep_name = ep.name
+    if vitis_ep_name is None:
+        sys.exit("No VitisAI EP found via Windows ML on this machine.")
+    ep_name = vitis_ep_name
 
     step("Building config (forcing VitisAI EP) ...")
     config = og.Config(str(model_path))
