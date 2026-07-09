@@ -1,58 +1,62 @@
 """Run an AMD NPU (VitisAI) ONNX model directly with ONNX Runtime GenAI.
 
 Bypasses the Foundry Local SDK/Core so you can bisect ORT / ORT-GenAI / EP
-versions independently.
-
-Point --model at a Foundry Local model cache folder that contains a
-`genai_config.json` configured for VitisAIExecutionProvider — e.g. the
-folder Foundry Local downloads under:
-  %LOCALAPPDATA%\Microsoft\FoundryLocal\models\<model-id>\
+versions independently. Uses the same alias as `foundry_amd_npu.py` and
+looks for the model in the Foundry Local model cache — run that script
+first (or `foundry model load <alias>`) so the AMD NPU variant is cached.
 """
 
-import argparse
+import os
 import sys
 import time
+from pathlib import Path
 
 import onnxruntime_genai as og
+
+ALIAS = "qwen2.5-0.5b"  # keep in sync with foundry_amd_npu.py
+PROMPT = "Say hello from the AMD NPU."
+MAX_LENGTH = 128
+
+FOUNDRY_MODELS_DIR = Path(os.environ.get("LOCALAPPDATA", "")) / "Microsoft" / "FoundryLocal" / "models"
 
 
 def step(msg: str) -> None:
     print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
+def find_model_folder() -> Path:
+    """Locate the AMD NPU (VitisAI) variant folder for ALIAS in the Foundry cache."""
+    if not FOUNDRY_MODELS_DIR.is_dir():
+        sys.exit(f"Foundry model cache not found at {FOUNDRY_MODELS_DIR}. "
+                 f"Run foundry_amd_npu.py first to download the model.")
+    for cfg in FOUNDRY_MODELS_DIR.rglob("genai_config.json"):
+        name = str(cfg.parent).lower()
+        if ALIAS.lower() in name and "vitis" in name:
+            return cfg.parent
+    sys.exit(f"No AMD NPU variant of '{ALIAS}' found in {FOUNDRY_MODELS_DIR}. "
+             f"Run foundry_amd_npu.py first to download it.")
+
+
 def main() -> None:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--model", required=True,
-                    help="Path to the model folder (contains genai_config.json)")
-    ap.add_argument("--prompt", default="Say hello from the AMD NPU.")
-    ap.add_argument("--max-length", type=int, default=128)
-    ap.add_argument("--force-vitis", action="store_true",
-                    help="Override providers in genai_config.json and force VitisAI")
-    args = ap.parse_args()
-
     step(f"onnxruntime-genai version: {og.__version__}")
-    step(f"Loading model config from {args.model} ...")
-    config = og.Config(args.model)
 
-    if args.force_vitis:
-        step("Forcing VitisAIExecutionProvider ...")
-        config.clear_providers()
-        config.append_provider("VitisAI")
+    model_path = find_model_folder()
+    step(f"Model folder: {model_path}")
 
     step("Building model (first NPU compile can take minutes) ...")
     t0 = time.time()
-    model = og.Model(config)
+    model = og.Model(str(model_path))
     step(f"Model built in {time.time() - t0:.1f}s.")
 
     tokenizer = og.Tokenizer(model)
     tokenizer_stream = tokenizer.create_stream()
 
-    input_tokens = tokenizer.encode(args.prompt)
+    input_tokens = tokenizer.encode(PROMPT)
 
     params = og.GeneratorParams(model)
-    params.set_search_options(max_length=args.max_length)
+    params.set_search_options(max_length=MAX_LENGTH)
 
-    step(f"Prompt: {args.prompt!r}")
+    step(f"Prompt: {PROMPT!r}")
     step("Generating ...")
     t0 = time.time()
 
@@ -69,12 +73,9 @@ def main() -> None:
         print(tokenizer_stream.decode(new_token), end="", flush=True)
     print()
 
-    total = time.time() - t0
-    step(f"First token: {first_token_time:.2f}s  Total: {total:.2f}s")
+    step(f"First token: {first_token_time:.2f}s  Total: {time.time() - t0:.2f}s")
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        sys.exit(130)
+    main()
+

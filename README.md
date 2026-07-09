@@ -28,22 +28,23 @@ has an AMD NPU variant (check with `foundry model list --variants` — look for
 
 ## Alternative: direct ORT-GenAI (no Foundry Local)
 
-`genai_amd_npu.py` bypasses Foundry Local and runs a locally-cached model
-directly with `onnxruntime-genai-winml`. Useful for bisecting ORT / ORT-GenAI
-versions against the AMD NPU EP without the Foundry Core in the way.
+`genai_amd_npu.py` bypasses Foundry Local and runs the same model directly
+with `onnxruntime-genai-winml`. Uses the same `ALIAS` and prompt as
+`foundry_amd_npu.py` and looks up the cached model folder in the Foundry
+Local model cache. Run `foundry_amd_npu.py` first so the AMD NPU variant is
+downloaded.
+
+Useful for bisecting ORT / ORT-GenAI versions against the AMD NPU EP without
+the Foundry Core in the way.
 
 ```powershell
 python -m venv .venv-genai
 .\.venv-genai\Scripts\Activate.ps1
 pip install -r requirements-genai.txt
-
-# Point at a model folder that has genai_config.json (VitisAI EP)
-python genai_amd_npu.py --model "C:\path\to\model" --prompt "hello"
+python genai_amd_npu.py
 
 # Pin specific versions to bisect:
 pip install "onnxruntime-genai-winml==0.13.2"
 pip install "onnxruntime-genai-winml==0.14.1"
 ```
-
-Add `--force-vitis` to override the providers listed in `genai_config.json`.
 
