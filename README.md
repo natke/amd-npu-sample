@@ -41,10 +41,16 @@ the Foundry Core in the way.
 python -m venv .venv-genai
 .\.venv-genai\Scripts\Activate.ps1
 pip install -r requirements-genai.txt
+
+# Install the ONNX Runtime version you want to test against
+# (windowsml does NOT install onnxruntime unless you use its [with-ort] extra,
+# so we install it explicitly to control the version we're bisecting.)
+pip install "onnxruntime==1.26.0"
+
 python genai_amd_npu.py
 
-# Pin specific versions to bisect:
-pip install "onnxruntime-genai-winml==0.13.2"
-pip install "onnxruntime-genai-winml==0.14.1"
+# To bisect, uninstall and reinstall with a different version:
+pip install --force-reinstall "onnxruntime==1.23.2"
+pip install --force-reinstall "onnxruntime-genai-winml==0.13.2"
 ```
 
