@@ -1,4 +1,4 @@
-# amd-npu-sample
+# AMD NPU Foundry Local sample
 
 Minimal Python sample that downloads and runs an AMD NPU (VitisAI) model
 using the [Foundry Local](https://github.com/microsoft/Foundry-Local) Python SDK.
@@ -6,7 +6,6 @@ using the [Foundry Local](https://github.com/microsoft/Foundry-Local) Python SDK
 ## Prerequisites
 
 - Windows on an AMD Ryzen AI (XDNA NPU) machine
-- Foundry Local installed (CLI or SDK runtime)
 - Python 3.11+
 
 ## Install
