@@ -4,13 +4,8 @@ Bypasses the Foundry Local SDK/Core so you can bisect ORT / ORT-GenAI / EP
 versions independently. Uses the same alias as `foundry_amd_npu.py` and
 looks for the model in the Foundry Local model cache — run that script
 first (or `foundry model load <alias>`) so the AMD NPU variant is cached.
-
-Locates the AMD NPU EP by scanning `C:\\Program Files\\WindowsApps` for the
-`MicrosoftCorporationII.WinML.AMD.NPU.EP.*` MSIX package.
 """
 
-import glob
-import os
 import sys
 import time
 from pathlib import Path
@@ -20,9 +15,6 @@ import onnxruntime_genai as og
 ALIAS = "qwen2.5-0.5b"  # keep in sync with foundry_amd_npu.py
 PROMPT = "Say hello from the AMD NPU."
 MAX_LENGTH = 128
-EP_NAME = "VitisAIExecutionProvider"
-EP_DLL = "onnxruntime_providers_vitisai.dll"
-EP_PKG_GLOB = r"C:\Program Files\WindowsApps\MicrosoftCorporationII.WinML.AMD.NPU.EP.*"
 
 FOUNDRY_MODELS_DIR = Path.home() / ".foundry" / "cache" / "models" / "Microsoft"
 
@@ -44,34 +36,35 @@ def find_model_folder() -> Path:
              f"Run foundry_amd_npu.py first to download it.")
 
 
-def find_ep_dll() -> Path:
-    """Locate onnxruntime_providers_vitisai.dll in the AMD NPU EP MSIX package."""
-    for pkg in glob.glob(EP_PKG_GLOB):
-        for dll in Path(pkg).rglob(EP_DLL):
-            return dll
-    sys.exit(f"Could not find {EP_DLL} under {EP_PKG_GLOB}. "
-             f"Is the AMD NPU EP installed via Windows Update / Foundry Local?")
-
-
 def main() -> None:
     step(f"onnxruntime-genai version: {og.__version__}")
 
     model_path = find_model_folder()
     step(f"Model folder: {model_path}")
 
-    ep_dll = find_ep_dll()
-    step(f"EP library:    {ep_dll}")
+    step("Discovering AMD NPU (VitisAI) EP via Windows ML ...")
+    try:
+        import windowsml
+        vitis_ep = None
+        with windowsml.EpCatalog() as catalog:
+            for ep in catalog.find_all_providers():
+                step(f"  {ep.name} v{ep.version} state={ep.ready_state.name} path={ep.library_path}")
+                if "vitis" in ep.name.lower():
+                    ep.ensure_ready()
+                    vitis_ep = (ep.name, ep.library_path)
+        if vitis_ep is None:
+            sys.exit("No VitisAI EP found via Windows ML on this machine.")
+    except Exception as e:
+        sys.exit(f"Failed to query Windows ML EP catalog: {e}")
 
-    # Make sibling helper DLLs (e.g. onnxruntime_vitis_ai_custom_ops.dll) discoverable.
-    os.add_dll_directory(str(ep_dll.parent))
-
-    step(f"Registering EP: {EP_NAME}")
-    og.register_execution_provider_library(EP_NAME, str(ep_dll))
+    ep_name, ep_lib = vitis_ep
+    step(f"Registering EP library: {ep_name} -> {ep_lib}")
+    og.register_execution_provider_library(ep_name, ep_lib)
 
     step("Building config (forcing VitisAI EP) ...")
     config = og.Config(str(model_path))
     config.clear_providers()
-    config.append_provider(EP_NAME)
+    config.append_provider(ep_name)
 
     step("Building model (first NPU compile can take minutes) ...")
     t0 = time.time()
@@ -108,5 +101,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
 
