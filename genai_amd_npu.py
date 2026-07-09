@@ -42,9 +42,22 @@ def main() -> None:
     model_path = find_model_folder()
     step(f"Model folder: {model_path}")
 
+    step("Registering execution providers via Windows ML ...")
+    try:
+        import winml
+        for ep_name in winml.register_execution_providers():
+            step(f"  Registered: {ep_name}")
+    except Exception as e:
+        sys.exit(f"Failed to register WinML execution providers: {e}")
+
+    step("Building config (forcing VitisAI EP) ...")
+    config = og.Config(str(model_path))
+    config.clear_providers()
+    config.append_provider("VitisAI")
+
     step("Building model (first NPU compile can take minutes) ...")
     t0 = time.time()
-    model = og.Model(str(model_path))
+    model = og.Model(config)
     step(f"Model built in {time.time() - t0:.1f}s.")
 
     tokenizer = og.Tokenizer(model)
