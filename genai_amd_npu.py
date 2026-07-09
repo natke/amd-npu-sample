@@ -44,9 +44,11 @@ def main() -> None:
 
     step("Registering execution providers via Windows ML ...")
     try:
-        import winml
-        for ep_name in winml.register_execution_providers():
-            step(f"  Registered: {ep_name}")
+        import windowsml
+        with windowsml.EpCatalog() as catalog:
+            for ep in catalog.find_all_providers():
+                step(f"  {ep.name} v{ep.version} state={ep.ready_state.name}")
+                ep.ensure_ready()
     except Exception as e:
         sys.exit(f"Failed to register WinML execution providers: {e}")
 
