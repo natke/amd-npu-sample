@@ -6,7 +6,6 @@ looks for the model in the Foundry Local model cache — run that script
 first (or `foundry model load <alias>`) so the AMD NPU variant is cached.
 """
 
-import os
 import sys
 import time
 from pathlib import Path
@@ -17,7 +16,7 @@ ALIAS = "qwen2.5-0.5b"  # keep in sync with foundry_amd_npu.py
 PROMPT = "Say hello from the AMD NPU."
 MAX_LENGTH = 128
 
-FOUNDRY_MODELS_DIR = Path(os.environ.get("LOCALAPPDATA", "")) / "Microsoft" / "FoundryLocal" / "models"
+FOUNDRY_MODELS_DIR = Path.home() / ".foundry" / "cache" / "models" / "Microsoft"
 
 
 def step(msg: str) -> None:
