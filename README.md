@@ -54,6 +54,14 @@ Pass any model alias in the catalog that has an AMD NPU variant via `--model`
 (check with `foundry model list --variants` — look for
 `NPU / VitisAIExecutionProvider`).
 
+To confirm the diagnosis, downgrade the SDK to **1.1.0** (Core.WinML built
+against ORT 1.23.2.3) — it runs successfully against Vitis EP 1.8.62:
+
+```powershell
+pip install --force-reinstall "foundry-local-sdk-winml==1.1.0"
+python foundry_amd_npu.py
+```
+
 ---
 
 ## Repro 3: Direct ORT-GenAI (choose your own ONNX Runtime version)
