@@ -104,9 +104,3 @@ is why the regression only surfaced at SDK 1.2.0.
 | 0.10.0            | 1.2.0            | 1.26.0 ❌   |
 | 0.10.1            | 1.2.3            | 1.26.0 ❌   |
 
-### Fix path options
-
-1. Ship a WinML Core built against ORT 1.24.x (last known good).
-2. Get the ORT team to fix the 1.25.0 regression and roll a 1.26.x patch,
-   then rebuild Core.WinML against it.
-
