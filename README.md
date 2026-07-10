@@ -23,19 +23,22 @@ pip install -r requirements.txt
 
 ```powershell
 python foundry_amd_npu.py
+
+# Or pick a different model alias (default: qwen2.5-0.5b):
+python foundry_amd_npu.py --model phi-3.5-mini
 ```
 
-Edit `ALIAS` in `foundry_amd_npu.py` to any model alias in the catalog that
-has an AMD NPU variant (check with `foundry model list --variants` — look for
+Pass any model alias in the catalog that has an AMD NPU variant via `--model`
+(check with `foundry model list --variants` — look for
 `NPU / VitisAIExecutionProvider`).
 
 ## Alternative: direct ORT-GenAI (no Foundry Local)
 
 `genai_amd_npu.py` bypasses Foundry Local and runs the same model directly
-with `onnxruntime-genai-winml`. Uses the same `ALIAS` and prompt as
-`foundry_amd_npu.py` and looks up the cached model folder in the Foundry
-Local model cache. Run `foundry_amd_npu.py` first so the AMD NPU variant is
-downloaded.
+with `onnxruntime-genai-winml`. It accepts the same `--model` alias as
+`foundry_amd_npu.py` (default: `qwen2.5-0.5b`) and looks up the cached model
+folder in the Foundry Local model cache. Run `foundry_amd_npu.py` first so
+the AMD NPU variant is downloaded.
 
 Useful for bisecting ORT / ORT-GenAI versions against the AMD NPU EP without
 the Foundry Core in the way.
@@ -51,6 +54,9 @@ pip install -r requirements-genai.txt
 pip install "onnxruntime==1.26.0"
 
 python genai_amd_npu.py
+
+# Or with a different model alias:
+python genai_amd_npu.py --model phi-3.5-mini
 
 # To bisect, uninstall and reinstall with a different version:
 pip install --force-reinstall "onnxruntime==1.23.2"
