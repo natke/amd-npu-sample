@@ -48,11 +48,19 @@ def main() -> None:
     with windowsml.EpCatalog() as catalog:
         for ep in catalog.find_all_providers():
             step(f"  {ep.name} v{ep.version} state={ep.ready_state.name} path={ep.library_path}")
-            ep.ensure_ready()
-            if not ep.library_path:
-                step(f"  skip {ep.name}: empty library_path")
+            try:
+                ep.ensure_ready()
+            except Exception as e:
+                step(f"    ensure_ready failed: {e}")
                 continue
-            og.register_execution_provider_library(ep.name, ep.library_path)
+            if not ep.library_path:
+                step(f"    skip: empty library_path")
+                continue
+            try:
+                og.register_execution_provider_library(ep.name, ep.library_path)
+            except Exception as e:
+                step(f"    register failed: {e}")
+                continue
             if "vitis" in ep.name.lower():
                 vitis_ep_name = ep.name
     if vitis_ep_name is None:
