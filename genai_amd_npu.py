@@ -6,6 +6,7 @@ looks for the model in the Foundry Local model cache — run that script
 first (or `foundry model load <alias>`) so the AMD NPU variant is cached.
 """
 
+import argparse
 import sys
 import time
 from pathlib import Path
@@ -13,7 +14,7 @@ from pathlib import Path
 import onnxruntime_genai as og
 import windowsml
 
-ALIAS = "qwen2.5-0.5b"  # keep in sync with foundry_amd_npu.py
+DEFAULT_ALIAS = "qwen2.5-0.5b"  # keep in sync with foundry_amd_npu.py
 PROMPT = "Say hello from the AMD NPU."
 MAX_LENGTH = 128
 
@@ -24,23 +25,36 @@ def step(msg: str) -> None:
     print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
-def find_model_folder() -> Path:
-    """Locate the AMD NPU (VitisAI) variant folder for ALIAS in the Foundry cache."""
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Run an AMD NPU ONNX model with ORT GenAI.")
+    parser.add_argument(
+        "--model",
+        default=DEFAULT_ALIAS,
+        help=f"Model alias to run (default: {DEFAULT_ALIAS}).",
+    )
+    return parser.parse_args()
+
+
+def find_model_folder(alias: str) -> Path:
+    """Locate the AMD NPU (VitisAI) variant folder for alias in the Foundry cache."""
     if not FOUNDRY_MODELS_DIR.is_dir():
         sys.exit(f"Foundry model cache not found at {FOUNDRY_MODELS_DIR}. "
                  f"Run foundry_amd_npu.py first to download the model.")
     for cfg in FOUNDRY_MODELS_DIR.rglob("genai_config.json"):
         name = str(cfg.parent).lower()
-        if ALIAS.lower() in name and "vitis" in name:
+        if alias.lower() in name and "vitis" in name:
             return cfg.parent
-    sys.exit(f"No AMD NPU variant of '{ALIAS}' found in {FOUNDRY_MODELS_DIR}. "
+    sys.exit(f"No AMD NPU variant of '{alias}' found in {FOUNDRY_MODELS_DIR}. "
              f"Run foundry_amd_npu.py first to download it.")
 
 
 def main() -> None:
+    args = parse_args()
+    alias = args.model
+
     step(f"onnxruntime-genai version: {og.__version__}")
 
-    model_path = find_model_folder()
+    model_path = find_model_folder(alias)
     step(f"Model folder: {model_path}")
 
     step("Discovering EPs via Windows ML and registering all ...")

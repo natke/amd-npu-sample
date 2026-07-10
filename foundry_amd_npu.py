@@ -3,18 +3,32 @@
 Requires: pip install foundry-local-sdk-winml  (on Windows with an AMD NPU machine).
 """
 
+import argparse
 import time
 
 from foundry_local_sdk import Configuration, FoundryLocalManager
 
-ALIAS = "qwen2.5-0.5b"  # any alias with an AMD NPU variant in the catalog
+DEFAULT_ALIAS = "qwen2.5-0.5b"  # any alias with an AMD NPU variant in the catalog
 
 
 def step(msg: str) -> None:
     print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Run an AMD NPU model with Foundry Local.")
+    parser.add_argument(
+        "--model",
+        default=DEFAULT_ALIAS,
+        help=f"Model alias to run (default: {DEFAULT_ALIAS}).",
+    )
+    return parser.parse_args()
+
+
 def main() -> None:
+    args = parse_args()
+    alias = args.model
+
     step("Initializing Foundry Local Manager (starts daemon)...")
     FoundryLocalManager.initialize(Configuration(app_name="AmdNpuExample"))
     manager = FoundryLocalManager.instance
@@ -32,10 +46,10 @@ def main() -> None:
     step(f"EP registration: success={result.success} status={result.status} "
          f"registered={result.registered_eps} failed={result.failed_eps}")
 
-    step(f"Looking up model alias '{ALIAS}'...")
-    model = manager.catalog.get_model(ALIAS)
+    step(f"Looking up model alias '{alias}'...")
+    model = manager.catalog.get_model(alias)
     if model is None:
-        raise SystemExit(f"Alias '{ALIAS}' not found in catalog.")
+        raise SystemExit(f"Alias '{alias}' not found in catalog.")
 
     step("Available variants:")
     for v in model.variants:
@@ -51,7 +65,7 @@ def main() -> None:
         None,
     )
     if npu_variant is None:
-        raise SystemExit(f"No AMD NPU variant available for '{ALIAS}'.")
+        raise SystemExit(f"No AMD NPU variant available for '{alias}'.")
     step(f"Selected variant: {npu_variant.id}")
     model.select_variant(npu_variant)
 
