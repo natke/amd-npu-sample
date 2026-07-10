@@ -3,6 +3,9 @@
 Minimal Python sample that downloads and runs an AMD NPU (VitisAI) model
 using the [Foundry Local](https://github.com/microsoft/Foundry-Local) Python SDK.
 
+Used to bisect an incompatibility between ONNX Runtime and the AMD NPU
+(VitisAI) EP — see [Bisection results](#bisection-results) below.
+
 ## Prerequisites
 
 - Windows on an AMD Ryzen AI (XDNA NPU) machine
@@ -53,4 +56,51 @@ python genai_amd_npu.py
 pip install --force-reinstall "onnxruntime==1.23.2"
 pip install --force-reinstall "onnxruntime-genai-winml==0.13.2"
 ```
+
+## Bisection results
+
+**Root cause:** ONNX Runtime **1.25.0** introduced the incompatibility with
+the AMD NPU (VitisAI) EP. All 1.24.x releases work; 1.25.0+ reproduces the
+bug.
+
+### By ORT version (direct GenAI test via `genai_amd_npu.py`)
+
+| ORT       | Status              |
+| --------- | ------------------- |
+| 1.24.x    | ✅ works            |
+| 1.25.0    | ❌ bug introduced   |
+| 1.26.0    | ❌ bug              |
+
+### By Foundry Local WinML SDK version
+
+Native Core is ABI-locked to a specific ORT major.minor + GenAI major.minor,
+so the SDK-level bug tracks whichever ORT it ships with:
+
+| SDK (WinML) | ORT        | GenAI  | WinML / WinAppSDK           | Status                          |
+| ----------- | ---------- | ------ | --------------------------- | ------------------------------- |
+| 0.8.2.2     | 1.23.2     | —      | —                           | ✅ (pre-1.25)                   |
+| 0.9.0       | 1.23.2.3   | —      | —                           | ✅ (pre-1.25)                   |
+| 1.0.0       | 1.23.2.3   | 0.13.1 | WinAppSDK 1.8.250916003     | ✅ (pre-1.25)                   |
+| 1.1.0       | 1.23.2.3   | 0.13.2 | WinAppSDK 1.8.250916003     | ✅ confirmed (with EP 1.8.62)   |
+| 1.2.0       | **1.26.0** | 0.14.0 | WinML 2.1.1                 | ❌ confirmed                    |
+| 1.2.1       | **1.26.0** | 0.14.1 | WinML 2.1.1                 | ❌                              |
+| 1.2.2       | **1.26.0** | 0.14.1 | WinML 2.1.1                 | ❌                              |
+| 1.2.3       | **1.26.0** | 0.14.1 | WinML 2.1.1                 | ❌ confirmed                    |
+
+**Cliff:** The WinML SDK jumped from ORT 1.23.2.3 (1.1.0) straight to 1.26.0
+(1.2.0) — no WinML SDK build was ever shipped against ORT 1.24 or 1.25, which
+is why the regression only surfaced at SDK 1.2.0.
+
+### Foundry Local CLI mapping
+
+| Foundry Local CLI | SDK / Core.WinML | ORT         |
+| ----------------- | ---------------- | ----------- |
+| 0.10.0            | 1.2.0            | 1.26.0 ❌   |
+| 0.10.1            | 1.2.3            | 1.26.0 ❌   |
+
+### Fix path options
+
+1. Ship a WinML Core built against ORT 1.24.x (last known good).
+2. Get the ORT team to fix the 1.25.0 regression and roll a 1.26.x patch,
+   then rebuild Core.WinML against it.
 
