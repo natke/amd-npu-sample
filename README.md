@@ -1,27 +1,48 @@
 # AMD NPU Foundry Local sample
 
-Minimal Python sample that downloads and runs an AMD NPU (VitisAI) model
-using the [Foundry Local](https://github.com/microsoft/Foundry-Local) Python SDK.
+Minimal repros for an incompatibility between ONNX Runtime and the AMD NPU
+(VitisAI) EP, hit when running a model on the NPU via
+[Foundry Local](https://github.com/microsoft/Foundry-Local).
 
-Used to bisect an incompatibility between ONNX Runtime and the AMD NPU
-(VitisAI) EP — see [Bisection results](#bisection-results) below.
+Three ways to reproduce it, from easiest to most involved. See
+[Bisection results](#bisection-results) below for the summary of what causes
+the bug and where it's fixed.
 
 ## Prerequisites
 
 - Windows on an AMD Ryzen AI (XDNA NPU) machine
-- Python 3.11+
+- AMD Vitis AI EP installed (bug reproduces on **1.8.62–1.8.67**; fixed in **1.8.68+**)
+- Python 3.11+ (for repros 2 and 3)
 
-## Install
+---
+
+## Repro 1: Foundry Local CLI (easiest)
+
+No Python required. Install the latest Foundry Local CLI (**0.10.1**) and
+run any model with an AMD NPU variant:
+
+```powershell
+winget install Microsoft.FoundryLocal
+foundry model run qwen2.5-0.5b
+```
+
+The CLI ships with Core.WinML 1.2.3 (ORT 1.26.0), which triggers the bug on
+Vitis EP 1.8.62–1.8.67.
+
+---
+
+## Repro 2: Foundry Local Python SDK
+
+Uses `foundry_amd_npu.py` to download and run an NPU model via the Foundry
+Local Python SDK. Same underlying Core.WinML as the CLI, so hits the same
+bug — but useful when you want to script model selection or step through
+manager/catalog behaviour.
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-```
 
-## Run
-
-```powershell
 python foundry_amd_npu.py
 
 # Or pick a different model alias (default: qwen2.5-0.5b):
@@ -32,16 +53,18 @@ Pass any model alias in the catalog that has an AMD NPU variant via `--model`
 (check with `foundry model list --variants` — look for
 `NPU / VitisAIExecutionProvider`).
 
-## Alternative: direct ORT-GenAI (no Foundry Local)
+---
 
-`genai_amd_npu.py` bypasses Foundry Local and runs the same model directly
-with `onnxruntime-genai-winml`. It accepts the same `--model` alias as
-`foundry_amd_npu.py` (default: `qwen2.5-0.5b`) and looks up the cached model
-folder in the Foundry Local model cache. Run `foundry_amd_npu.py` first so
-the AMD NPU variant is downloaded.
+## Repro 3: Direct ORT-GenAI (choose your own ONNX Runtime version)
 
-Useful for bisecting ORT / ORT-GenAI versions against the AMD NPU EP without
-the Foundry Core in the way.
+`genai_amd_npu.py` bypasses Foundry Local and runs the model directly with
+`onnxruntime-genai-winml`. This lets you swap the ONNX Runtime version
+independently of the Foundry Local Core, so you can bisect ORT / ORT-GenAI
+versions against the AMD NPU EP.
+
+It accepts the same `--model` alias as `foundry_amd_npu.py` (default:
+`qwen2.5-0.5b`) and looks up the cached model folder in the Foundry Local
+model cache. Run repro 1 or 2 first so the AMD NPU variant is downloaded.
 
 ```powershell
 python -m venv .venv-genai
@@ -62,6 +85,8 @@ python genai_amd_npu.py --model phi-3.5-mini
 pip install --force-reinstall "onnxruntime==1.23.2"
 pip install --force-reinstall "onnxruntime-genai-winml==0.13.2"
 ```
+
+---
 
 ## Bisection results
 
