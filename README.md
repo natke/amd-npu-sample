@@ -18,11 +18,12 @@ the bug and where it's fixed.
 
 ## Repro 1: Foundry Local CLI (easiest)
 
-No Python required. Install the latest Foundry Local CLI (**0.10.1**) and
-run any model with an AMD NPU variant:
+No Python required. Download and install the latest Foundry Local CLI
+(**0.10.1**) from
+[the Foundry-Local releases page](https://github.com/microsoft/Foundry-Local/releases#release-cli-preview-0.10.1),
+then run any model with an AMD NPU variant:
 
 ```powershell
-winget install Microsoft.FoundryLocal
 foundry model run qwen2.5-0.5b
 ```
 
