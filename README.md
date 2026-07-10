@@ -108,18 +108,15 @@ the bug. The bug is fixed in Vitis EP version **1.8.68**.
 | —      | 0.9.0            | —      | 1.23.2.3   | —                       | 1.8.63   | ✅     |
 | —      | 1.0.0            | 0.13.1 | 1.23.2.3   | WinAppSDK 1.8.250916003 | 1.8.63   | ✅     |
 | —      | 1.1.0            | 0.13.2 | 1.23.2.3   | WinAppSDK 1.8.250916003 | 1.8.63   | ✅     |
+| —      | —                | —      | 1.24.x     | —                       | 1.8.63   | ✅     |
+| —      | —                | —      | **1.25.0** | —                       | 1.8.63   | ❌     |
+| —      | —                | —      | **1.26.0** | —                       | 1.8.63   | ❌     |
 | 0.10.0 | 1.2.0            | 0.14.0 | **1.26.0** | WinML 2.1.1             | 1.8.63   | ❌     |
 | —      | 1.2.1            | 0.14.1 | **1.26.0** | WinML 2.1.1             | 1.8.63   | ❌     |
 | —      | 1.2.2            | 0.14.1 | **1.26.0** | WinML 2.1.1             | 1.8.63   | ❌     |
 | 0.10.1 | 1.2.3            | 0.14.1 | **1.26.0** | WinML 2.1.1             | 1.8.63   | ❌     |
 
-Direct ORT bisection via `genai_amd_npu.py` (Vitis EP 1.8.63):
-
-| ORT    | Status            |
-| ------ | ----------------- |
-| 1.24.x | ✅ works          |
-| 1.25.0 | ❌ bug introduced |
-| 1.26.0 | ❌ bug            |
+Rows with blank CLI/SDK were tested via `genai_amd_npu.py` (direct ORT / ORT-GenAI, no Foundry Local Core).
 
 **Cliff:** The WinML SDK jumped from ORT 1.23.2.3 (1.1.0) straight to 1.26.0
 (1.2.0) — no WinML SDK build was ever shipped against ORT 1.24 or 1.25, which
