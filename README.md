@@ -11,7 +11,7 @@ the bug and where it's fixed.
 ## Prerequisites
 
 - Windows on an AMD Ryzen AI (XDNA NPU) machine
-- AMD Vitis AI EP installed (bug reproduces on **1.8.62–1.8.67**; fixed in **1.8.68+**)
+- AMD Vitis AI EP installed (bug reproduces on **1.8.62**; fixed in **1.8.68+**)
 - Python 3.11+ (for repros 2 and 3)
 
 ---
@@ -28,7 +28,7 @@ foundry model run qwen2.5-0.5b
 ```
 
 The CLI ships with Core.WinML 1.2.3 (ORT 1.26.0), which triggers the bug on
-Vitis EP 1.8.62–1.8.67.
+Vitis EP 1.8.62.
 
 ---
 
