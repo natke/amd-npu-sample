@@ -65,8 +65,9 @@ pip install --force-reinstall "onnxruntime-genai-winml==0.13.2"
 
 ## Bisection results
 
-**Root cause:** The AMD Vitis AI **EP 1.8.62** introduced the incompatibility.
-Earlier Vitis EP versions work; 1.8.62+ reproduces the bug.
+**Root cause:** The AMD Vitis AI **EP 1.8.62** introduced the incompatibility
+with ONNX Runtime versions 1.25.0 or later. Earlier Vitis EP versions work;
+1.8.62 exhibits the bug. The bug is fixed in Vitis EP version **1.8.68**.
 
 ### By ORT version (direct GenAI test via `genai_amd_npu.py`)
 
