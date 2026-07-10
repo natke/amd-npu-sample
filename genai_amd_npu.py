@@ -11,6 +11,7 @@ import time
 from pathlib import Path
 
 import onnxruntime_genai as og
+import windowsml
 
 ALIAS = "qwen2.5-0.5b"  # keep in sync with foundry_amd_npu.py
 PROMPT = "Say hello from the AMD NPU."
@@ -43,35 +44,29 @@ def main() -> None:
     step(f"Model folder: {model_path}")
 
     step("Discovering EPs via Windows ML and registering all ...")
-    import windowsml
-    vitis_ep_name = None
+    ep_name = None
     with windowsml.EpCatalog() as catalog:
         for ep in catalog.find_all_providers():
             step(f"  {ep.name} v{ep.version} state={ep.ready_state.name}")
             try:
                 ep.ensure_ready()
-            except Exception as e:
-                step(f"    ensure_ready failed: {e}")
-                continue
-            try:
                 lib = ep.library_path
             except Exception as e:
-                step(f"    library_path failed: {e}")
+                step(f"    ensure_ready/library_path failed: {e}")
                 continue
-            step(f"    library_path: {lib}")
             if not lib:
                 step(f"    skip: empty library_path")
                 continue
+            step(f"    library_path: {lib}")
             try:
                 og.register_execution_provider_library(ep.name, lib)
             except Exception as e:
                 step(f"    register failed: {e}")
                 continue
             if "vitis" in ep.name.lower():
-                vitis_ep_name = ep.name
-    if vitis_ep_name is None:
+                ep_name = ep.name
+    if ep_name is None:
         sys.exit("No VitisAI EP found via Windows ML on this machine.")
-    ep_name = vitis_ep_name
 
     step("Building config (forcing VitisAI EP) ...")
     config = og.Config(str(model_path))
