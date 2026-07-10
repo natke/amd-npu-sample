@@ -36,8 +36,7 @@ Vitis EP 1.8.62.
 
 Uses `foundry_amd_npu.py` to download and run an NPU model via the Foundry
 Local Python SDK. Same underlying Core.WinML as the CLI, so hits the same
-bug — but useful when you want to script model selection or step through
-manager/catalog behaviour.
+bug.
 
 ```powershell
 python -m venv .venv
