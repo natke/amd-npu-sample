@@ -11,7 +11,7 @@ the bug and where it's fixed.
 ## Prerequisites
 
 - Windows on an AMD Ryzen AI (XDNA NPU) machine
-- AMD Vitis AI EP installed (bug reproduces on **1.8.62**; fixed in **1.8.68+**)
+- AMD Vitis AI EP installed (bug reproduces on **1.8.63**; fixed in **1.8.68+**)
 - Python 3.11+ (for repros 2 and 3)
 
 ---
@@ -28,7 +28,7 @@ foundry model run qwen2.5-0.5b
 ```
 
 The CLI ships with Core.WinML 1.2.3 (ORT 1.26.0), which triggers the bug on
-Vitis EP 1.8.62.
+Vitis EP 1.8.63.
 
 ---
 
@@ -54,7 +54,7 @@ Pass any model alias in the catalog that has an AMD NPU variant via `--model`
 `NPU / VitisAIExecutionProvider`).
 
 To confirm the diagnosis, downgrade the SDK to **1.1.0** (Core.WinML built
-against ORT 1.23.2.3) — it runs successfully against Vitis EP 1.8.62:
+against ORT 1.23.2.3) — it runs successfully against Vitis EP 1.8.63:
 
 ```powershell
 pip install --force-reinstall "foundry-local-sdk-winml==1.1.0"
@@ -98,22 +98,38 @@ pip install --force-reinstall "onnxruntime-genai-winml==0.13.2"
 
 ## Bisection results
 
-**Root cause:** The AMD Vitis AI **EP 1.8.62** introduced the incompatibility
-with ONNX Runtime versions 1.25.0 or later. Earlier Vitis EP versions work;
-1.8.62 exhibits the bug. The bug is fixed in Vitis EP version **1.8.68**.
+**Root cause:** The AMD Vitis AI **EP 1.8.63** introduced the incompatibility
+with ONNX Runtime versions 1.25.0 or later. EP 1.8.62 works; 1.8.63 exhibits
+the bug. The bug is fixed in Vitis EP version **1.8.68**.
 
 | CLI    | SDK / Core.WinML | GenAI  | ORT        | WinML / WinAppSDK       | Vitis EP | Status |
 | ------ | ---------------- | ------ | ---------- | ----------------------- | -------- | ------ |
 | —      | 0.8.2.2          | —      | 1.23.2     | —                       | 1.8.62   | ✅     |
+| —      | 0.8.2.2          | —      | 1.23.2     | —                       | 1.8.63   | ✅     |
+| —      | 0.8.2.2          | —      | 1.23.2     | —                       | 1.8.68   | ✅     |
 | —      | 0.9.0            | —      | 1.23.2.3   | —                       | 1.8.62   | ✅     |
+| —      | 0.9.0            | —      | 1.23.2.3   | —                       | 1.8.63   | ✅     |
+| —      | 0.9.0            | —      | 1.23.2.3   | —                       | 1.8.68   | ✅     |
 | —      | 1.0.0            | 0.13.1 | 1.23.2.3   | WinAppSDK 1.8.250916003 | 1.8.62   | ✅     |
+| —      | 1.0.0            | 0.13.1 | 1.23.2.3   | WinAppSDK 1.8.250916003 | 1.8.63   | ✅     |
+| —      | 1.0.0            | 0.13.1 | 1.23.2.3   | WinAppSDK 1.8.250916003 | 1.8.68   | ✅     |
 | —      | 1.1.0            | 0.13.2 | 1.23.2.3   | WinAppSDK 1.8.250916003 | 1.8.62   | ✅     |
-| 0.10.0 | 1.2.0            | 0.14.0 | **1.26.0** | WinML 2.1.1             | 1.8.62   | ❌     |
-| —      | 1.2.1            | 0.14.1 | **1.26.0** | WinML 2.1.1             | 1.8.62   | ❌     |
-| —      | 1.2.2            | 0.14.1 | **1.26.0** | WinML 2.1.1             | 1.8.62   | ❌     |
-| 0.10.1 | 1.2.3            | 0.14.1 | **1.26.0** | WinML 2.1.1             | 1.8.62   | ❌     |
+| —      | 1.1.0            | 0.13.2 | 1.23.2.3   | WinAppSDK 1.8.250916003 | 1.8.63   | ✅     |
+| —      | 1.1.0            | 0.13.2 | 1.23.2.3   | WinAppSDK 1.8.250916003 | 1.8.68   | ✅     |
+| 0.10.0 | 1.2.0            | 0.14.0 | **1.26.0** | WinML 2.1.1             | 1.8.62   | ✅     |
+| 0.10.0 | 1.2.0            | 0.14.0 | **1.26.0** | WinML 2.1.1             | 1.8.63   | ❌     |
+| 0.10.0 | 1.2.0            | 0.14.0 | **1.26.0** | WinML 2.1.1             | 1.8.68   | ✅     |
+| —      | 1.2.1            | 0.14.1 | **1.26.0** | WinML 2.1.1             | 1.8.62   | ✅     |
+| —      | 1.2.1            | 0.14.1 | **1.26.0** | WinML 2.1.1             | 1.8.63   | ❌     |
+| —      | 1.2.1            | 0.14.1 | **1.26.0** | WinML 2.1.1             | 1.8.68   | ✅     |
+| —      | 1.2.2            | 0.14.1 | **1.26.0** | WinML 2.1.1             | 1.8.62   | ✅     |
+| —      | 1.2.2            | 0.14.1 | **1.26.0** | WinML 2.1.1             | 1.8.63   | ❌     |
+| —      | 1.2.2            | 0.14.1 | **1.26.0** | WinML 2.1.1             | 1.8.68   | ✅     |
+| 0.10.1 | 1.2.3            | 0.14.1 | **1.26.0** | WinML 2.1.1             | 1.8.62   | ✅     |
+| 0.10.1 | 1.2.3            | 0.14.1 | **1.26.0** | WinML 2.1.1             | 1.8.63   | ❌     |
+| 0.10.1 | 1.2.3            | 0.14.1 | **1.26.0** | WinML 2.1.1             | 1.8.68   | ✅     |
 
-Direct ORT bisection via `genai_amd_npu.py` (Vitis EP 1.8.62):
+Direct ORT bisection via `genai_amd_npu.py` (Vitis EP 1.8.63):
 
 | ORT    | Status            |
 | ------ | ----------------- |
